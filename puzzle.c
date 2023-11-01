@@ -59,7 +59,7 @@
 
 struct tree_node
 {
-	int p[N][N];
+	int reg;
 	int h;				// the value of the heuristic function for this node
 	int g;				// the depth of this node wrt the root of the search tree
 	int f;				// f=0 or f=h or f=h+g, depending on the search algorithm used.
@@ -750,7 +750,7 @@ int main(int argc, char** argv)
 {
 	int err;
 	struct tree_node *solution_node;
-	int puzzle[N][N];		// The initial puzzle read from a file
+	int state;		        // The initial puzzle read from a file
 	int method;				// The search algorithm that will be used to solve the puzzle.
 
 	if (argc!=4)
