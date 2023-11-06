@@ -1,0 +1,8 @@
+7 18
+square     5 6
+decrease   24 2
+decrease   23 2
+decrease   22 2
+decrease   21 2
+decrease   20 2
+decrease   19 2

@@ -70,7 +70,7 @@ struct tree_node
 	int h;				// the value of the heuristic function for this node
 	int g;				// the cost of this node from the root of the search tree
 	int f;              // The estimated cost to the destination node.f=0 or f=h or f=h+g, depending on the search algorithm used.
-	int d;          //The depth of the tree where the node is at
+	int d;              //The depth of the tree where the node is at
 	struct tree_node *parent;	// pointer to the parent node (NULL for the root).
 	int action;			// The direction of the last move
 };
@@ -204,7 +204,7 @@ int manhattan_distance(int i, int j, int n)
 //		As described above.
 int heuristic(int reg)
 {
-	return goal - reg;
+	return abs(goal - reg);
 }
 
 
@@ -401,7 +401,6 @@ int find_children(struct tree_node *current_node, int method)
 	// Find the blank position in the current puzzle
 	//find_blank(current_node->p,&i,&j);
     int reg = current_node->reg;
-
     //Increment by 1
     if(reg<pow(10,9)){
         // Initializing the new child
@@ -423,6 +422,7 @@ int find_children(struct tree_node *current_node, int method)
 		{
 			// Computing the heuristic value
 			child->h=heuristic(child->reg);
+			printf("%d\n", child->h);
 
 			if (method==best)
 				child->f = child->h;
@@ -780,7 +780,7 @@ void initialize_search(int reg, int method)
 	root->d=0;
 
 	//old code
-	//root->h=heuristic(root->p);
+	root->h=heuristic(root->reg);
 
 	if (method==best)
 		root->f=root->h;
@@ -831,9 +831,10 @@ struct tree_node *search(int method)
 		frontier_head = frontier_head->next;
 		free(temp_frontier_node);
 		if (frontier_head==NULL)
-			frontier_tail=NULL;
+            frontier_tail=NULL;
 		else
-			frontier_head->previous=NULL;
+            frontier_head->previous=NULL;
+
 		// Find the children of the extracted node
 		int err=find_children(current_node, method);
 
