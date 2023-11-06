@@ -204,7 +204,7 @@ int manhattan_distance(int i, int j, int n)
 //		As described above.
 int heuristic(int reg)
 {
-	return abs(goal - reg);
+	return (int) abs(goal - reg)/2;
 }
 
 
