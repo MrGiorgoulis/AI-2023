@@ -1,2 +1,252 @@
 1/11
 tree_node change
+
+Actions
+1)increment
+2)decrease
+3)doubling
+4)halfing
+5)square
+6)sqrt
+
+next step
+find_children()
+-check_with_parents()(for loops)
+-calculate heuristic
+
+
+
+
+
+
+
+
+πρέπει να κάνω struct solution ώστε να κρατάω και τις τιμές των καταχωρητών
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	// Move blank to the left
+	if (j>0)
+	{
+		int jj;
+		// Initializing the new child
+		struct tree_node *child=(struct tree_node*) malloc(sizeof(struct tree_node));
+		if (child==NULL) return -1;
+
+		child->parent = current_node;
+		child->direction = left;
+		child->g = current_node->g + 1;		// The depth of the new child
+		// Computing the puzzle for the new child
+		for(x=0;x<N;x++)
+			for(y=0;y<N;y++)
+				if (x==i && y==j-1)
+					child->p[x][y]=0;
+				else if (x==i && y==j)
+					child->p[x][y]=current_node->p[i][j-1];
+				else
+					child->p[x][y]=current_node->p[x][y];
+
+		// Check for loops
+		if (!check_with_parents(child))
+			// In case of loop detection, the child is deleted
+			free(child);
+		else
+		{
+			// Computing the heuristic value
+			child->h=heuristic(child->p);
+			if (method==best)
+				child->f = child->h;
+			else if (method==astar)
+				child->f = child->g + child->h;
+			else
+				child->f = 0;
+
+            int err=0;
+            if (method==depth)
+				err=add_frontier_front(child);
+			else if (method==breadth)
+				err=add_frontier_back(child);
+			else if (method==best || method==astar)
+				err=add_frontier_in_order(child);
+			if (err<0)
+                return -1;
+		}
+
+	}
+
+	// Move blank to the right
+	if (j<N-1)
+	{
+		int jj;
+		// Initializing the new child
+		struct tree_node *child=(struct tree_node*) malloc(sizeof(struct tree_node));
+		if (child==NULL) return -1;
+
+		child->parent=current_node;
+		child->direction=right;
+		child->g=current_node->g+1;		// The depth of the new child
+		// Computing the puzzle for the new child
+		for(x=0;x<N;x++)
+			for(y=0;y<N;y++)
+				if (x==i && y==j+1)
+					child->p[x][y]=0;
+				else if (x==i && y==j)
+					child->p[x][y]=current_node->p[i][j+1];
+				else
+					child->p[x][y]=current_node->p[x][y];
+
+		// Check for loops
+		if (!check_with_parents(child))
+		{
+			// In case of loop detection, the child is deleted
+			free(child);
+			child=NULL;
+		}
+		else
+		{
+			// Computing the heuristic value
+			child->h=heuristic(child->p);
+			if (method==best)
+				child->f=child->h;
+			else if (method==astar)
+				child->f=child->g+child->h;
+			else
+				child->f=0;
+
+            int err=0;
+            if (method==depth)
+				err=add_frontier_front(child);
+			else if (method==breadth)
+				err=add_frontier_back(child);
+			else if (method==best || method==astar)
+				err=add_frontier_in_order(child);
+			if (err<0)
+                return -1;
+		}
+	}
+
+	// Move blank up
+	if (i>0)
+	{
+		int jj;
+		// Initializing the new child
+		struct tree_node *child=(struct tree_node*) malloc(sizeof(struct tree_node));
+		if (child==NULL) return -1;
+
+		child->parent=current_node;
+		child->direction=up;
+		child->g=current_node->g+1;		// The depth of the new child
+		// Computing the puzzle for the new child
+		for(x=0;x<N;x++)
+			for(y=0;y<N;y++)
+				if (x==i-1 && y==j)
+					child->p[x][y]=0;
+				else if (x==i && y==j)
+					child->p[x][y]=current_node->p[i-1][j];
+				else
+					child->p[x][y]=current_node->p[x][y];
+
+		// Check for loops
+		if (!check_with_parents(child))
+		{
+			// In case of loop detection, the child is deleted
+			free(child);
+			child=NULL;
+		}
+		else
+		{
+			// Computing the heuristic value
+			child->h=heuristic(child->p);
+			if (method==best)
+				child->f=child->h;
+			else if (method==astar)
+				child->f=child->g+child->h;
+			else
+				child->f=0;
+
+            int err=0;
+            if (method==depth)
+				err=add_frontier_front(child);
+			else if (method==breadth)
+				err=add_frontier_back(child);
+			else if (method==best || method==astar)
+				err=add_frontier_in_order(child);
+			if (err<0)
+                return -1;
+		}
+	}
+
+	// Move blank down
+	if (i<N-1)
+	{
+		int jj;
+		// Initializing the new child
+		struct tree_node *child=(struct tree_node*) malloc(sizeof(struct tree_node));
+		if (child==NULL) return -1;
+
+		child->parent=current_node;
+		child->direction=down;
+		child->g=current_node->g+1;		// The depth of the new child
+		// Computing the puzzle for the new child
+		for(x=0;x<N;x++)
+			for(y=0;y<N;y++)
+				if (x==i+1 && y==j)
+					child->p[x][y]=0;
+				else if (x==i && y==j)
+					child->p[x][y]=current_node->p[i+1][j];
+				else
+					child->p[x][y]=current_node->p[x][y];
+
+		// Check for loops
+		if (!check_with_parents(child))
+		{
+			// In case of loop detection, the child is deleted
+			free(child);
+			child=NULL;
+		}
+		else
+		{
+			// Computing the heuristic value
+			child->h=heuristic(child->p);
+			if (method==best)
+				child->f=child->h;
+			else if (method==astar)
+				child->f=child->g+child->h;
+			else
+				child->f=0;
+
+            int err=0;
+            if (method==depth)
+				err=add_frontier_front(child);
+			else if (method==breadth)
+				err=add_frontier_back(child);
+			else if (method==best || method==astar)
+				err=add_frontier_in_order(child);
+			if (err<0)
+                return -1;
+		}
+	}

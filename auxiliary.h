@@ -42,6 +42,7 @@ int is_valid(int p[N][N])
 	return 1;
 }
 
+/*
 // This function reads a file containing a puzzle and stores the numbers
 // in the global variable int puzzle[N][N].
 // Inputs:
@@ -49,7 +50,7 @@ int is_valid(int p[N][N])
 // Output:
 //		0 --> Successful read.
 //		1 --> Unsuccessful read
-int read_puzzle(char* filename, int puzzle[N][N])
+int read_puzzle(char* filename, int* reg)
 {
 	FILE *fin;
 	int i,j,err;
@@ -85,7 +86,7 @@ int read_puzzle(char* filename, int puzzle[N][N])
 		#endif
 		return -1;
 	}
-}
+}*/
 
 // This function finds the position of the blank within a puzzle.
 // Inputs:

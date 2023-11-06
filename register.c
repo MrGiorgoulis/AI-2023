@@ -28,6 +28,13 @@
 #define best	3
 #define astar	4
 
+#define increment 1
+#define decrease 2
+#define doubling 3
+#define halfing 4
+#define square 5
+#define sqroot 6
+
 // A 3x3 puzzle:
 //
 //	+---+---+---+
@@ -61,10 +68,11 @@ struct tree_node
 {
 	int reg;
 	int h;				// the value of the heuristic function for this node
-	int g;				// the depth of this node wrt the root of the search tree
-	int f;				// f=0 or f=h or f=h+g, depending on the search algorithm used.
-	struct tree_node *parent;	// pointer to the parrent node (NULL for the root).
-	int direction;			// The direction of the last move
+	int g;				// the cost of this node from the root of the search tree
+	int f;              // The estimated cost to the destination node.f=0 or f=h or f=h+g, depending on the search algorithm used.
+	int d;          //The depth of the tree where the node is at
+	struct tree_node *parent;	// pointer to the parent node (NULL for the root).
+	int action;			// The direction of the last move
 };
 
 // A node of the frontier. Frontier is kept as a double-linked list,
@@ -84,14 +92,17 @@ clock_t t2;				// End time of the search algorithm
 #define TIMEOUT		60	// Program terminates after TIMOUT secs
 
 int solution_length;	// The lenght of the solution table.
-int *solution;		// Pointer to a dynamic table with the moves of the solution.
+int **solution;		// Pointer to a dynamic table with the moves of the solution.
+
+int input_value;
+int goal;
 
 
 // Reading run-time parameters.
 int get_method(char* s)
 {
 	if (strcmp(s,"breadth")==0)
-		return  breadth;
+        return  breadth;
 	else if (strcmp(s,"depth")==0)
 		return depth;
 	else if (strcmp(s,"best")==0)
@@ -109,15 +120,9 @@ int get_method(char* s)
 // Output:
 //		1 --> The puzzles are equal
 //		0 --> The puzzles are not equal
-int equal_puzzles(int p1[N][N],int p2[N][N])
+int equal_puzzles(int reg1,int reg2)
 {
-	int i,j;
-	for(i=0;i<N;i++)
-		for(j=0;j<N;j++)
-			if (p1[i][j]!=p2[i][j])
-				return 0;
-
-	return 1;
+	return(reg1==reg2);
 }
 
 // This function checks whether a node in the search tree
@@ -136,7 +141,7 @@ int check_with_parents(struct tree_node *new_node)
 	struct tree_node *parent=new_node->parent;
 	while (parent!=NULL)
 	{
-		if (equal_puzzles(new_node->p, parent->p))
+		if (equal_puzzles(new_node->reg, parent->reg))
 			return 0;
 		parent=parent->parent;
 	}
@@ -197,14 +202,9 @@ int manhattan_distance(int i, int j, int n)
 //		int p[N][N];	A puzzle
 // Output:
 //		As described above.
-int heuristic(int p[N][N])
+int heuristic(int reg)
 {
-	int i,j;
-	int score=0;
-	for (i=0;i<N;i++)
-		for (j=0;j<N;j++)
-			score+=manhattan_distance(i,j,p[i][j]);
-	return score;
+	return goal - reg;
 }
 
 
@@ -354,6 +354,37 @@ int add_frontier_in_order(struct tree_node *node)
 	return 0;
 }
 
+int check_sqrt(int reg){
+    double number = (double) reg;
+    double squareRoot = sqrt(number);
+    int squareRootInt = (int)squareRoot;
+
+    if (squareRootInt * squareRootInt == (int)number)
+        return 1;
+    return 0;
+
+}
+
+//Calculates the cost
+int calculate_cost(int reg, int action){
+
+    if(action==1)
+        return 2;
+    else if(action==2)
+        return 2;
+    else if(action==3)
+        return ceil((double)reg/2) + 1;
+    else if(action==4)
+        return ceil((double)reg/4) + 1;
+    else if(action==5)
+        return ceil((pow(reg,2)-reg)/4 +1);
+    else if(action==6)
+        return (reg - sqrt(reg))/4 + 1;
+
+    return -1;
+}
+
+
 // This function expands a leaf-node of the search tree.
 // A leaf-node may have up to 4 childs. A table with 4 pointers
 // to these childs is created, with NULLs for those childrens that do not exist.
@@ -368,29 +399,22 @@ int find_children(struct tree_node *current_node, int method)
 	int i,j,x,y;
 
 	// Find the blank position in the current puzzle
-	find_blank(current_node->p,&i,&j);
+	//find_blank(current_node->p,&i,&j);
+    int reg = current_node->reg;
 
-	// Move blank to the left
-	if (j>0)
-	{
-		int jj;
-		// Initializing the new child
+    //Increment by 1
+    if(reg<pow(10,9)){
+        // Initializing the new child
 		struct tree_node *child=(struct tree_node*) malloc(sizeof(struct tree_node));
 		if (child==NULL) return -1;
 
 		child->parent = current_node;
-		child->direction = left;
-		child->g = current_node->g + 1;		// The depth of the new child
-		// Computing the puzzle for the new child
-		for(x=0;x<N;x++)
-			for(y=0;y<N;y++)
-				if (x==i && y==j-1)
-					child->p[x][y]=0;
-				else if (x==i && y==j)
-					child->p[x][y]=current_node->p[i][j-1];
-				else
-					child->p[x][y]=current_node->p[x][y];
+		child->action = increment;
+		child->g = current_node->g + calculate_cost(current_node->reg, increment);
+		child->d = current_node->d + 1;
 
+		//Computing the value for the new child
+		child->reg = reg+1;
 		// Check for loops
 		if (!check_with_parents(child))
 			// In case of loop detection, the child is deleted
@@ -398,7 +422,8 @@ int find_children(struct tree_node *current_node, int method)
 		else
 		{
 			// Computing the heuristic value
-			child->h=heuristic(child->p);
+			child->h=heuristic(child->reg);
+
 			if (method==best)
 				child->f = child->h;
 			else if (method==astar)
@@ -416,47 +441,36 @@ int find_children(struct tree_node *current_node, int method)
 			if (err<0)
                 return -1;
 		}
+    }
 
-	}
-
-	// Move blank to the right
-	if (j<N-1)
-	{
-		int jj;
-		// Initializing the new child
+    //Decrease by 1
+    if(reg>0){
+        // Initializing the new child
 		struct tree_node *child=(struct tree_node*) malloc(sizeof(struct tree_node));
 		if (child==NULL) return -1;
 
-		child->parent=current_node;
-		child->direction=right;
-		child->g=current_node->g+1;		// The depth of the new child
-		// Computing the puzzle for the new child
-		for(x=0;x<N;x++)
-			for(y=0;y<N;y++)
-				if (x==i && y==j+1)
-					child->p[x][y]=0;
-				else if (x==i && y==j)
-					child->p[x][y]=current_node->p[i][j+1];
-				else
-					child->p[x][y]=current_node->p[x][y];
+		child->parent = current_node;
+		child->action = decrease;
+		child->g = current_node->g + calculate_cost(current_node->reg, decrease);
+		child->d = current_node->d + 1;
+
+		//Computing the value for the new child
+		child->reg = reg-1;
 
 		// Check for loops
 		if (!check_with_parents(child))
-		{
 			// In case of loop detection, the child is deleted
 			free(child);
-			child=NULL;
-		}
 		else
 		{
 			// Computing the heuristic value
-			child->h=heuristic(child->p);
+			child->h=heuristic(child->reg);
 			if (method==best)
-				child->f=child->h;
+				child->f = child->h;
 			else if (method==astar)
-				child->f=child->g+child->h;
+				child->f = child->g + child->h;
 			else
-				child->f=0;
+				child->f = 0;
 
             int err=0;
             if (method==depth)
@@ -468,46 +482,36 @@ int find_children(struct tree_node *current_node, int method)
 			if (err<0)
                 return -1;
 		}
-	}
+    }
 
-	// Move blank up
-	if (i>0)
-	{
-		int jj;
-		// Initializing the new child
+    //Double
+    if(reg>0 && reg<=pow(10,9)){
+        // Initializing the new child
 		struct tree_node *child=(struct tree_node*) malloc(sizeof(struct tree_node));
 		if (child==NULL) return -1;
 
-		child->parent=current_node;
-		child->direction=up;
-		child->g=current_node->g+1;		// The depth of the new child
-		// Computing the puzzle for the new child
-		for(x=0;x<N;x++)
-			for(y=0;y<N;y++)
-				if (x==i-1 && y==j)
-					child->p[x][y]=0;
-				else if (x==i && y==j)
-					child->p[x][y]=current_node->p[i-1][j];
-				else
-					child->p[x][y]=current_node->p[x][y];
+		child->parent = current_node;
+		child->action = doubling;
+		child->g = current_node->g + calculate_cost(current_node->reg, doubling);
+		child->d = current_node->d + 1;
+
+		//Computing the value for the new child
+		child->reg = reg*2;
 
 		// Check for loops
 		if (!check_with_parents(child))
-		{
 			// In case of loop detection, the child is deleted
 			free(child);
-			child=NULL;
-		}
 		else
 		{
 			// Computing the heuristic value
-			child->h=heuristic(child->p);
+			child->h=heuristic(child->reg);
 			if (method==best)
-				child->f=child->h;
+				child->f = child->h;
 			else if (method==astar)
-				child->f=child->g+child->h;
+				child->f = child->g + child->h;
 			else
-				child->f=0;
+				child->f = 0;
 
             int err=0;
             if (method==depth)
@@ -519,46 +523,36 @@ int find_children(struct tree_node *current_node, int method)
 			if (err<0)
                 return -1;
 		}
-	}
+    }
 
-	// Move blank down
-	if (i<N-1)
-	{
-		int jj;
-		// Initializing the new child
+    //Half
+    if(reg>0){
+        // Initializing the new child
 		struct tree_node *child=(struct tree_node*) malloc(sizeof(struct tree_node));
 		if (child==NULL) return -1;
 
-		child->parent=current_node;
-		child->direction=down;
-		child->g=current_node->g+1;		// The depth of the new child
-		// Computing the puzzle for the new child
-		for(x=0;x<N;x++)
-			for(y=0;y<N;y++)
-				if (x==i+1 && y==j)
-					child->p[x][y]=0;
-				else if (x==i && y==j)
-					child->p[x][y]=current_node->p[i+1][j];
-				else
-					child->p[x][y]=current_node->p[x][y];
+		child->parent = current_node;
+		child->action = halfing;
+		child->g = current_node->g + calculate_cost(current_node->reg, halfing);
+		child->d = current_node->d + 1;
 
-		// Check for loops
+        //Computing the value for the new child
+        child->reg = reg/2;  //Integer division returns floor by definition
+
+        // Check for loops
 		if (!check_with_parents(child))
-		{
 			// In case of loop detection, the child is deleted
 			free(child);
-			child=NULL;
-		}
 		else
 		{
 			// Computing the heuristic value
-			child->h=heuristic(child->p);
+			child->h=heuristic(child->reg);
 			if (method==best)
-				child->f=child->h;
+				child->f = child->h;
 			else if (method==astar)
-				child->f=child->g+child->h;
+				child->f = child->g + child->h;
 			else
-				child->f=0;
+				child->f = 0;
 
             int err=0;
             if (method==depth)
@@ -570,19 +564,100 @@ int find_children(struct tree_node *current_node, int method)
 			if (err<0)
                 return -1;
 		}
-	}
+    }
 
+    //Square
+    if(pow(reg,2)<=pow(10,9)){
+        // Initializing the new child
+		struct tree_node *child=(struct tree_node*) malloc(sizeof(struct tree_node));
+		if (child==NULL) return -1;
+
+		child->parent = current_node;
+		child->action = square;
+		child->g = current_node->g + calculate_cost(current_node->reg, square);
+		child->d = current_node->d + 1;
+
+		//Computing the value for the new child
+		child->reg = pow(reg, 2);
+
+		// Check for loops
+		if (!check_with_parents(child))
+			// In case of loop detection, the child is deleted
+			free(child);
+		else
+		{
+			// Computing the heuristic value
+			child->h=heuristic(child->reg);
+			if (method==best)
+				child->f = child->h;
+			else if (method==astar)
+				child->f = child->g + child->h;
+			else
+				child->f = 0;
+
+            int err=0;
+            if (method==depth)
+				err=add_frontier_front(child);
+			else if (method==breadth)
+				err=add_frontier_back(child);
+			else if (method==best || method==astar)
+				err=add_frontier_in_order(child);
+			if (err<0)
+                return -1;
+		}
+    }
+
+    //Sqrt
+    if(reg>1 && check_sqrt(reg)){
+        // Initializing the new child
+		struct tree_node *child=(struct tree_node*) malloc(sizeof(struct tree_node));
+		if (child==NULL) return -1;
+
+        child->parent = current_node;
+		child->action = sqroot;
+		child->g = current_node->g + calculate_cost(current_node->reg, sqroot);
+		child->d = current_node->d + 1;
+
+		//Computing the value for the new child
+		child->reg = (int)sqrt((double)reg);
+
+		// Check for loops
+		if (!check_with_parents(child))
+			// In case of loop detection, the child is deleted
+			free(child);
+		else
+		{
+			// Computing the heuristic value
+			child->h=heuristic(child->reg);
+			if (method==best)
+				child->f = child->h;
+			else if (method==astar)
+				child->f = child->g + child->h;
+			else
+				child->f = 0;
+
+            int err=0;
+            if (method==depth)
+				err=add_frontier_front(child);
+			else if (method==breadth)
+				err=add_frontier_back(child);
+			else if (method==best || method==astar)
+				err=add_frontier_in_order(child);
+			if (err<0)
+                return -1;
+		}
+    }
 	return 1;
 }
 
 // Auxiliary function that displays a message in case of wrong input parameters.
 void syntax_message()
 {
-	printf("puzzle <method> <input-file> <output-file>\n\n");
+	printf("register <method> <input-int> <output-int>\n\n");
 	printf("where: ");
 	printf("<method> = breadth|depth|best|astar\n");
-	printf("<input-file> is a file containing a %dx%d puzzle description.\n",N,N);
-	printf("<output-file> is the file where the solution will be written.\n");
+	printf("<input-int> is an integer given to the program as input.\n",N,N);
+	printf("<output-int> is the final output integer.\n");
 }
 
 // This function checks whether a puzzle is a solution puzzle.
@@ -591,14 +666,12 @@ void syntax_message()
 // Outputs:
 //		1 --> The puzzle is a solution puzzle
 //		0 --> The puzzle is NOT a solution puzzle
-int is_solution(int p[N][N])
+int is_solution(int reg)
 {
-	int i,j;
-	for(i=0;i<N;i++)
-		for(j=0;j<N;j++)
-			if (((i<N-1 || j<N-1) && p[i][j]!=i*N+j+1) ||(i==N-1 && j==N-1 && p[i][j]!=0))
-				return 0;
-	return 1;
+
+    if(reg==goal)
+        return 1;
+    return 0;
 }
 
 // Giving a (solution) leaf-node of the search tree, this function computes
@@ -614,15 +687,20 @@ void extract_solution(struct tree_node *solution_node)
 	int i;
 
 	struct tree_node *temp_node=solution_node;
-	solution_length = solution_node->g;
-
-	solution= (int*) malloc(solution_length*sizeof(int));
+	solution_length = solution_node->d;
+	solution= (int**) malloc(solution_length*sizeof(int*));
+	for(i=0;i<solution_length;i++){
+        solution[i] = (int*)malloc(3*sizeof(int));
+	}
 	temp_node=solution_node;
 	i=solution_length;
 	while (temp_node->parent!=NULL)
 	{
+
 		i--;
-		solution[i] = temp_node->direction;
+		solution[i][0] = temp_node->action;
+		solution[i][1] = temp_node->g;
+		solution[i][2] = temp_node->reg;
 		temp_node=temp_node->parent;
 	}
 }
@@ -632,7 +710,7 @@ void extract_solution(struct tree_node *solution_node)
 //		char* filename	: The name of the file where the solution will be written.
 // Outputs:
 //		Nothing (apart from the new file)
-void write_solution_to_file(char* filename, int solution_length, int *solution)
+void write_solution_to_file(char* filename, int solution_length, int**solution)
 {
 	int i;
 	FILE *fout;
@@ -643,29 +721,52 @@ void write_solution_to_file(char* filename, int solution_length, int *solution)
 		printf("Now exiting...");
 		return;
 	}
-	fprintf(fout,"%d\n",solution_length);
-	for (i=0;i<solution_length;i++)
-		switch(solution[i])
-		{
-		case left:
-			fprintf(fout,"left\n");
-			break;
-		case right:
-			fprintf(fout,"right\n");
-			break;
-		case up:
-			fprintf(fout,"up\n");
-			break;
-		case down:
-			fprintf(fout,"down\n");
-			break;
+
+    printf("Solution Length: %d", solution_length);
+	int total_cost = solution[solution_length-1][1];
+	printf("\nTotal cost: %d", total_cost);
+
+	fprintf(fout,"%d %d\n",solution_length, total_cost);
+	for (i=0;i<solution_length;i++){
+
+        if(i==0){
+            int temp = solution[i][0];
+            if(temp == increment)
+                fprintf(fout,"increase   %d %d\n",input_value,solution[i][1]);
+            else if(temp == decrease)
+                fprintf(fout,"decrease   %d %d\n",input_value,solution[i][1]);
+            else if(temp==doubling)
+                fprintf(fout,"double     %d %d\n",input_value,solution[i][1]);
+            else if(temp==halfing)
+                fprintf(fout,"half       %d %d\n",input_value,solution[i][1]);
+            else if(temp==square)
+                fprintf(fout,"square     %d %d\n",input_value,solution[i][1]);
+            else if(temp==sqroot)
+                fprintf(fout,"sqrt       %d %d\n",input_value,solution[i][1]);
+        }
+        else{
+            int temp = solution[i][0];
+        if(temp == increment)
+            fprintf(fout,"increase   %d %d\n",solution[i-1][2],solution[i][1]-solution[i-1][1]);
+        else if(temp == decrease)
+            fprintf(fout,"decrease   %d %d\n",solution[i-1][2],solution[i][1]-solution[i-1][1]);
+        else if(temp==doubling)
+            fprintf(fout,"double     %d %d\n",solution[i-1][2],solution[i][1]-solution[i-1][1]);
+        else if(temp==halfing)
+            fprintf(fout,"half       %d %d\n",solution[i-1][2],solution[i][1]-solution[i-1][1]);
+        else if(temp==square)
+            fprintf(fout,"square     %d %d\n",solution[i-1][2],solution[i][1]-solution[i-1][1]);
+        else if(temp==sqroot)
+            fprintf(fout,"sqrt       %d %d\n",solution[i-1][2],solution[i][1]-solution[i-1][1]);
+        }
+
 	}
 	fclose(fout);
 }
 
 // This function initializes the search, i.e. it creates the root node of the search tree
 // and the first node of the frontier.
-void initialize_search(int puzzle[N][N], int method)
+void initialize_search(int reg, int method)
 {
 	struct tree_node *root=NULL;	// the root of the search tree.
 	int i,j,jj;
@@ -673,13 +774,14 @@ void initialize_search(int puzzle[N][N], int method)
 	// Initialize search tree
 	root=(struct tree_node*) malloc(sizeof(struct tree_node));
 	root->parent=NULL;
-	root->direction=-1;
-	for(i=0;i<N;i++)
-		for(j=0;j<N;j++)
-			root->p[i][j]=puzzle[i][j];
-
+	root->action=-1;
+	root->reg = reg;
 	root->g=0;
-	root->h=heuristic(root->p);
+	root->d=0;
+
+	//old code
+	//root->h=heuristic(root->p);
+
 	if (method==best)
 		root->f=root->h;
 	else if (method==astar)
@@ -721,7 +823,7 @@ struct tree_node *search(int method)
 		printf("Extracted from frontier...\n");
 		display_puzzle(current_node->p);
 #endif
-		if (is_solution(current_node->p))
+		if (is_solution(current_node->reg))
 			return current_node;
 
 		// Delete the first node of the frontier
@@ -732,7 +834,6 @@ struct tree_node *search(int method)
 			frontier_tail=NULL;
 		else
 			frontier_head->previous=NULL;
-
 		// Find the children of the extracted node
 		int err=find_children(current_node, method);
 
@@ -750,16 +851,19 @@ int main(int argc, char** argv)
 {
 	int err;
 	struct tree_node *solution_node;
-	int state;		        // The initial puzzle read from a file
+	int reg;		// The initial puzzle read from a file
 	int method;				// The search algorithm that will be used to solve the puzzle.
 
-	if (argc!=4)
+	/*if (argc!=4)
 	{
 		printf("Wrong number of arguments. Use correct syntax:\n");
 		syntax_message();
 		return -1;
-	}
-
+	}*/
+    printf("Argv[1]: %s\n", argv[1]);
+    printf("Argv[2]: %s\n", argv[2]);
+    printf("Argv[3]: %s\n", argv[3]);
+    printf("Argv[4]: %s\n", argv[4]);
 	method=get_method(argv[1]);
 	if (method<0)
 	{
@@ -767,15 +871,15 @@ int main(int argc, char** argv)
 		syntax_message();
 		return -1;
 	}
-
-	err=read_puzzle(argv[2], puzzle);
+	/*err=read_puzzle(argv[2], &reg);
 	if (err<0)
-		return -1;
-
-	printf("Solving %s using %s...\n",argv[2],argv[1]);
+		return -1;*/
+    reg = atoi(argv[2]);
+    input_value = reg;
+    goal = atoi(argv[3]);
+	//printf("Solving %s using %s...\n",argv[2],argv[1]);
 	t1=clock();
-
-	initialize_search(puzzle, method);
+	initialize_search(reg, method);
 
 	solution_node = search(method);			// The main call
 
@@ -790,7 +894,7 @@ int main(int argc, char** argv)
 	{
 		printf("Solution found! (%d steps)\n",solution_length);
 		printf("Time spent: %f secs\n",((float) t2-t1)/CLOCKS_PER_SEC);
-		write_solution_to_file(argv[3], solution_length, solution);
+		write_solution_to_file(argv[4], solution_length, solution);
 	}
 
 	return 0;
