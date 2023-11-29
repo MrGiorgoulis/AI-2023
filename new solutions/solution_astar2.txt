@@ -1,0 +1,6 @@
+4 10
+decrease   5 2
+square     4 4
+increase   16 2
+increase   17 2
+Time spent: 0.003000 secs

@@ -1,0 +1,5 @@
+3 21
+increase   5 2
+square     6 9
+half       36 10
+Time spent: 0.014000 secs

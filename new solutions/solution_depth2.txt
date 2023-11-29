@@ -1,0 +1,19 @@
+17 1382959
+square     5 6
+square     24 139
+square     576 82801
+half       331776 82945
+half       165888 41473
+sqrt       82944 20665
+half       288 73
+sqrt       144 34
+half       12 4
+square     6 9
+square     36 316
+square     1296 419581
+half       1679616 419905
+half       839808 209953
+sqrt       419904 104815
+half       648 163
+sqrt       324 77
+Time spent: 0.007000 secs

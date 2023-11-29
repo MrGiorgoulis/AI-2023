@@ -1,0 +1,10 @@
+8 30
+square     5 6
+half       24 7
+decrease   12 2
+double     11 7
+decrease   22 2
+decrease   21 2
+decrease   20 2
+decrease   19 2
+Time spent: 0.002000 secs
