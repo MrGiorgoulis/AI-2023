@@ -1,0 +1,7 @@
+6 80
+double     60 31
+increase   120 2
+sqrt       121 28
+decrease   11 2
+double     10 6
+double     20 11

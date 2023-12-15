@@ -1,0 +1,13 @@
+12 32
+square     2 1
+square     4 4
+double     16 9
+increase   32 2
+increase   33 2
+increase   34 2
+increase   35 2
+increase   36 2
+increase   37 2
+increase   38 2
+increase   39 2
+increase   40 2

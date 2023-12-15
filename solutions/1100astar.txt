@@ -1,0 +1,6 @@
+5 31
+double     1 2
+increase   2 2
+square     3 2
+increase   9 2
+square     10 23

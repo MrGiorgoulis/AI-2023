@@ -1,0 +1,6 @@
+5 47
+increase   2 2
+square     3 2
+square     9 19
+increase   81 2
+half       82 22

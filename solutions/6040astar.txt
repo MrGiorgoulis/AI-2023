@@ -1,0 +1,12 @@
+11 36
+half       60 16
+increase   30 2
+increase   31 2
+increase   32 2
+increase   33 2
+increase   34 2
+increase   35 2
+increase   36 2
+increase   37 2
+increase   38 2
+increase   39 2

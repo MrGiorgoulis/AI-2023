@@ -1,5 +1,7 @@
-7 18
+9 33
 square     5 6
+half       25 8
+double     12 7
 decrease   24 2
 decrease   23 2
 decrease   22 2

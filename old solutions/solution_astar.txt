@@ -1,5 +1,0 @@
-4 14
-double     5 4
-double     10 6
-decrease   20 2
-decrease   19 2

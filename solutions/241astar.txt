@@ -1,0 +1,9 @@
+8 23
+increase   2 2
+double     3 3
+square     6 8
+increase   36 2
+increase   37 2
+increase   38 2
+increase   39 2
+increase   40 2

@@ -1,0 +1,27 @@
+26 89
+decrease   100 2
+decrease   99 2
+decrease   98 2
+decrease   97 2
+decrease   96 2
+decrease   95 2
+decrease   94 2
+decrease   93 2
+decrease   92 2
+decrease   91 2
+decrease   90 2
+decrease   89 2
+decrease   88 2
+decrease   87 2
+decrease   86 2
+decrease   85 2
+decrease   84 2
+decrease   83 2
+decrease   82 2
+decrease   81 2
+decrease   80 2
+decrease   79 2
+decrease   78 2
+decrease   77 2
+decrease   76 2
+double     75 39
